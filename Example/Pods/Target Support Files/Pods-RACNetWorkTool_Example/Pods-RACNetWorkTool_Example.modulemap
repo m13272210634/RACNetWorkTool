@@ -1,0 +1,6 @@
+framework module Pods_RACNetWorkTool_Example {
+  umbrella header "Pods-RACNetWorkTool_Example-umbrella.h"
+
+  export *
+  module * { export * }
+}

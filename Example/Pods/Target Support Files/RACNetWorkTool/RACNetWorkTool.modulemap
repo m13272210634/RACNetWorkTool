@@ -1,0 +1,6 @@
+framework module RACNetWorkTool {
+  umbrella header "RACNetWorkTool-umbrella.h"
+
+  export *
+  module * { export * }
+}

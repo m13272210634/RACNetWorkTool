@@ -1,0 +1,14 @@
+use_frameworks!
+
+platform :ios, '8.0'
+
+
+target 'RACNetWorkTool_Example' do
+  pod 'RACNetWorkTool', :path => '../'
+  
+  pod 'ReactiveCocoa', :git => 'https://github.com/zhao0/ReactiveCocoa.git', :tag => '2.5.2'
+  # 网络请求
+  pod 'AFNetworking'                      , '3.1.0'
+  pod 'YYModel'                           , '1.0.4'
+  
+end
