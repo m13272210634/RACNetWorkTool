@@ -28,10 +28,10 @@ PODS:
   - YYModel (1.0.4)
 
 DEPENDENCIES:
-  - AFNetworking (= 3.1.0)
+  - AFNetworking
   - RACNetWorkTool (from `../`)
   - ReactiveCocoa (= 2.5.0)
-  - YYModel (= 1.0.4)
+  - YYModel
 
 SPEC REPOS:
   trunk:
@@ -49,6 +49,6 @@ SPEC CHECKSUMS:
   ReactiveCocoa: e2db045570aa97c695e7aa97c2bcab222ae51f4a
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
-PODFILE CHECKSUM: b69e40e320267b95f6a3ff5a589bacbb00eb01de
+PODFILE CHECKSUM: b0f89a24dcd854b055b51adbf1d7bf74fa0dbf98
 
-COCOAPODS: 1.8.3
+COCOAPODS: 1.9.3
