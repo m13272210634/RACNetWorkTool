@@ -8,22 +8,26 @@
 
 #import "WCJViewController.h"
 #import <RACNetWorkTool/RACHttpService.h>
+#import "Body.h"
 @interface WCJViewController ()
+
+@property(nonatomic, strong)UITextField*feild;
+
 
 @end
 
 @implementation WCJViewController
 
-- (void)viewDidLoad
-{
+- (void)viewDidLoad{
     [super viewDidLoad];
- 
+    
+    [self.feild.rac_textSignal subscribeNext:^(id x) {
+        
+    }];
+
 }
 
-- (void)didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
+
+
 
 @end

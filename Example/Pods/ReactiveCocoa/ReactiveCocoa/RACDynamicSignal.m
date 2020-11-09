@@ -41,11 +41,14 @@
 
 	if (self.didSubscribe != NULL) {
 		RACDisposable *schedulingDisposable = [RACScheduler.subscriptionScheduler schedule:^{
+                                            //信号产生的block执行
 			RACDisposable *innerDisposable = self.didSubscribe(subscriber);
 			[disposable addDisposable:innerDisposable];
+             NSLog(@"signal销毁了没1");
 		}];
 
 		[disposable addDisposable:schedulingDisposable];
+        NSLog(@"signal销毁了没2");
 	}
 	
 	return disposable;

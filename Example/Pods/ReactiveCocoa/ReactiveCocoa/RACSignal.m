@@ -280,7 +280,7 @@
 
 - (RACDisposable *)subscribeNext:(void (^)(id x))nextBlock {
 	NSCParameterAssert(nextBlock != NULL);
-	
+    //订阅者的创建
 	RACSubscriber *o = [RACSubscriber subscriberWithNext:nextBlock error:NULL completed:NULL];
 	return [self subscribe:o];
 }

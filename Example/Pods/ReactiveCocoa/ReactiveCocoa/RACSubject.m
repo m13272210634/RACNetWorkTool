@@ -38,14 +38,16 @@
 - (id)init {
 	self = [super init];
 	if (self == nil) return nil;
-
+    //组合销毁栈
 	_disposable = [RACCompoundDisposable compoundDisposable];
+    //订阅者数组
 	_subscribers = [[NSMutableArray alloc] initWithCapacity:1];
 	
 	return self;
 }
 
 - (void)dealloc {
+    NSLog(@"subject销毁了没3");
 	[self.disposable dispose];
 }
 
@@ -71,6 +73,7 @@
 			}];
 
 			if (index != NSNotFound) [subscribers removeObjectAtIndex:index];
+            NSLog(@"subject销毁了没2");
 		}
 	}];
 }

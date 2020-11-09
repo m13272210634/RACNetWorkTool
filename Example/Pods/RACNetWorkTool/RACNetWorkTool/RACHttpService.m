@@ -9,7 +9,8 @@
 #import "RACHttpService.h"
 #import <AFNetworking/AFNetworkActivityIndicatorManager.h>
 #import <YYModel/YYModel.h>
-#import "RACResponseModel.h"
+
+
 @implementation RACHttpService
 
 static id _service = nil;
@@ -219,17 +220,11 @@ static id _service = nil;
 - (RACSignal *)rac_parsedResponseOfClass:(Class)resultClass fromJSON:(NSDictionary *)responseObject {
     /// 这里主要解析的是 data:对应的数据
     responseObject = responseObject[RACHttpResponseDataKey];
-
-    RACResponseModel * responseModel = [[RACResponseModel alloc]init];
-    responseModel.code = [responseObject[RACHttpResponseCodeKey] integerValue];
-    responseModel.msg = responseObject[RACHttpResponseMsgKey];
-    
     return  [RACSignal createSignal:^ id (id<RACSubscriber> subscriber) {
         /// 解析字典
         void (^parseJSONDictionary)(NSDictionary *) = ^(NSDictionary *JSONDictionary) {
             if (resultClass == nil) {
-                responseModel.obj = JSONDictionary;
-                [subscriber sendNext:responseModel];
+                [subscriber sendNext:JSONDictionary];
                 return;
             }
             /// 这里继续取出数据 data{"list":[]}
@@ -237,8 +232,7 @@ static id _service = nil;
             if ([JSONArray isKindOfClass:[NSArray class]]) {
                 /// 字典数组 转对应的模型
                 NSArray *parsedObjects = [NSArray yy_modelArrayWithClass:resultClass.class json:JSONArray];
-                responseModel.obj = parsedObjects;
-                [subscriber sendNext:responseModel];
+                [subscriber sendNext:parsedObjects];
                 
             }else{
                 /// 字典转模型
@@ -252,16 +246,14 @@ static id _service = nil;
                     [subscriber sendError:error];
                     return;
                 }
-                responseModel.obj = parsedObject;
-                [subscriber sendNext:responseModel];
+                [subscriber sendNext:parsedObject];
             }
         };
         
         if ([responseObject isKindOfClass:NSArray.class]) {
             
             if (resultClass == nil) {
-                responseModel.obj = responseObject;
-                [subscriber sendNext:responseModel];
+                [subscriber sendNext:responseObject];
             }else{
                 /// 数组 保证数组里面装的是同一种 NSDcitionary
                 for (NSDictionary *JSONDictionary in responseObject) {
@@ -271,11 +263,11 @@ static id _service = nil;
                         return nil;
                     }
                 }
+                
                 /// 字典数组 转对应的模型
                 NSArray *parsedObjects = [NSArray yy_modelArrayWithClass:resultClass.class json:responseObject];
-                responseModel.obj = parsedObjects;
-
-                [subscriber sendNext:responseModel];
+                
+                [subscriber sendNext:parsedObjects];
             }
             [subscriber sendCompleted];
         } else if ([responseObject isKindOfClass:NSDictionary.class]) {
