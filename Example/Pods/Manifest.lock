@@ -14,7 +14,7 @@ PODS:
   - AFNetworking/Serialization (3.1.0)
   - AFNetworking/UIKit (3.1.0):
     - AFNetworking/NSURLSession
-  - RACNetWorkTool (0.1.7):
+  - RACNetWorkTool (0.1.8):
     - AFNetworking
     - ReactiveCocoa (~> 2.5.0)
     - YYModel (~> 1.0.4)
@@ -29,23 +29,26 @@ PODS:
 
 DEPENDENCIES:
   - AFNetworking
-  - RACNetWorkTool
+  - RACNetWorkTool (from `../`)
   - ReactiveCocoa (= 2.5.0)
   - YYModel
 
 SPEC REPOS:
   trunk:
     - AFNetworking
-    - RACNetWorkTool
     - ReactiveCocoa
     - YYModel
 
+EXTERNAL SOURCES:
+  RACNetWorkTool:
+    :path: "../"
+
 SPEC CHECKSUMS:
   AFNetworking: 5e0e199f73d8626b11e79750991f5d173d1f8b67
-  RACNetWorkTool: 60b3ea579cd2aefc5b04c4e71599abbca76d7da4
+  RACNetWorkTool: 5e373628fac22e2a444623005c94760b276922e5
   ReactiveCocoa: e2db045570aa97c695e7aa97c2bcab222ae51f4a
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
-PODFILE CHECKSUM: 7ab96ef3d64e89c7a8e0ee5d6d4918c26a26621a
+PODFILE CHECKSUM: fe4b70ef7226bf542f7995fb7b2460f6ee37a980
 
 COCOAPODS: 1.9.3

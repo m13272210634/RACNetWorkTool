@@ -294,6 +294,130 @@ static id _service = nil;
     
 }
 
+#pragma mark - Upload
+- (RACSignal *)rac_upload:(RACHttpRequest *)request responseClass:(Class)responseClass fileDatas:(NSArray<NSData*>*)fileDatas name:(NSString*)name minType:(NSString*)mineType{
+    /// request 必须的有值
+    if (!request) return [RACSignal error:[NSError errorWithDomain:RACHttpServiceDomainKey code:-1 userInfo:nil]];
+    /// 断言
+    NSAssert(StringIsNotEmpty(name), @"name is empty: %@", name);
+    
+    @weakify(self);
+    
+    /// 覆盖manager 请求序列化
+    self.requestSerializer = [self _requestSerializerWithRequest:request];
+    
+    /// 发起请求
+    /// concat:按一定顺序拼接信号，当多个信号发出的时候，有顺序的接收信号。 这里传进去的参数，不是parameters而是之前通过
+    /// urlParametersWithMethod:(NSString *)method path:(NSString *)path parameters:(NSDictionary *)parameters;穿进去的参数
+    return [[[self enqueueUploadRequestWithPath:request.requestParams.urlPath parameters:request.requestParams.params constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+        NSInteger count = fileDatas.count;
+        for (int i = 0; i< count; i++) {
+            /// 取出fileData
+            NSData *fileData = fileDatas[i];
+            
+            /// 断言
+            NSAssert([fileData isKindOfClass:NSData.class], @"fileData is not an NSData class: %@", fileData);
+            
+            // 在网络开发中，上传文件时，是文件不允许被覆盖，文件重名
+            // 要解决此问题，
+            // 可以在上传时使用当前的系统事件作为文件名
+            
+            static NSDateFormatter *formatter = nil;
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                formatter = [[NSDateFormatter alloc] init];
+            });
+            // 设置时间格式
+            [formatter setDateFormat:@"yyyyMMddHHmmss"];
+            NSString *dateString = [formatter stringFromDate:[NSDate date]];
+            NSString *fileName = [NSString  stringWithFormat:@"senba_empty_%@_%zd.jpg", dateString , i];
+            [formData appendPartWithFileData:fileData name:name fileName:fileName mimeType:StringIsNotEmpty(mineType)?mineType:@"application/octet-stream"];
+        }
+    }]
+             reduceEach:^RACStream *(NSURLResponse *response, NSDictionary * responseObject){
+                 @strongify(self);
+                 /// 请求成功 这里解析数据
+                 return [[self rac_parsedResponseOfClass:responseClass fromJSON:responseObject]
+                         map:^(id parsedResult) {
+                             RACHttpResponse *parsedResponse = [[RACHttpResponse alloc] initWithResponseObject:responseObject parsedResult:parsedResult];
+                             NSAssert(parsedResponse != nil, @"Could not create MHHTTPResponse with response %@ and parsedResult %@", response, parsedResult);
+                             return parsedResponse;
+                         }];
+             }]
+            concat];;
+}
+
+
+- (RACSignal *)enqueueUploadRequestWithPath:(NSString *)path parameters:(id)parameters constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block{
+    @weakify(self);
+    /// 创建信号
+    RACSignal *signal = [RACSignal createSignal:^(id<RACSubscriber> subscriber) {
+        @strongify(self);
+        /// 获取request
+        NSError *serializationError = nil;
+        
+        NSMutableURLRequest *request = [self.requestSerializer multipartFormRequestWithMethod:@"POST" URLString:[[NSURL URLWithString:path relativeToURL:self.baseURL] absoluteString] parameters:parameters constructingBodyWithBlock:block error:&serializationError];
+        if (serializationError) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu"
+            dispatch_async(self.completionQueue ?: dispatch_get_main_queue(), ^{
+                [subscriber sendError:serializationError];
+            });
+#pragma clang diagnostic pop
+            
+            return [RACDisposable disposableWithBlock:^{
+            }];
+        }
+        
+        __block NSURLSessionDataTask *task = [self uploadTaskWithStreamedRequest:request progress:nil completionHandler:^(NSURLResponse * __unused response, id responseObject, NSError *error) {
+            if (error) {
+                NSError *parseError = [self rac_errorFromRequestWithTask:task httpResponse:(NSHTTPURLResponse *)response responseObject:responseObject error:error];
+                [self HTTPRequestLog:task body:parameters error:parseError];
+                [subscriber sendError:parseError];
+            } else {
+                
+                /// 断言
+                NSAssert([responseObject isKindOfClass:NSDictionary.class], @"responseObject is not an NSDictionary: %@", responseObject);
+                
+                /// 在这里判断数据是否正确
+                /// 判断
+                NSInteger statusCode = [responseObject[RACHttpResponseCodeKey] integerValue];
+                
+                if (statusCode == RACHttpResponseSuccessCode) {
+                    /// 打包成元祖 回调数据
+                    [subscriber sendNext:RACTuplePack(response , responseObject)];
+                    [subscriber sendCompleted];
+                }else{
+                        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+                        userInfo[RACHttpResponseCodeKey] = @(statusCode);
+                        NSString *msgTips = responseObject[RACHttpResponseMsgKey];
+#if defined(DEBUG)||defined(_DEBUG)
+                        msgTips = StringIsNotEmpty(msgTips)?[NSString stringWithFormat:@"%@(%zd)",msgTips,statusCode]:[NSString stringWithFormat:@"服务器出错了，请稍后重试(%zd)~",statusCode];                 /// 调试模式
+#else
+                        msgTips = MHStringIsNotEmpty(msgTips)?msgTips:@"服务器出错了，请稍后重试~";  /// 发布模式
+#endif
+                        userInfo[RACHTTPServiceErrorMessagesKey] = msgTips;
+                        if (task.currentRequest.URL != nil) userInfo[RACHTTPServiceErrorRequestURLKey] = task.currentRequest.URL.absoluteString;
+                        if (task.error != nil) userInfo[NSUnderlyingErrorKey] = task.error;
+                        [subscriber sendError:[NSError errorWithDomain:RACHttpServiceDomainKey code:statusCode userInfo:userInfo]];
+                    }
+
+            }
+        }];
+        
+        [task resume];
+        return [RACDisposable disposableWithBlock:^{
+            [task cancel];
+        }];
+        
+    }];
+    /// replayLazily:replayLazily会在第一次订阅的时候才订阅sourceSignal
+    /// 会提供所有的值给订阅者 replayLazily还是冷信号 避免了冷信号的副作用
+    return [[signal
+             replayLazily]
+            setNameWithFormat:@"-enqueueUploadRequestWithPath: %@ parameters: %@", path, parameters];
+}
+
 - (NSError *)parsingErrorWithFailureReason:(NSString *)localizedFailureReason {
     NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
     userInfo[NSLocalizedDescriptionKey] = NSLocalizedString(@"Could not parse the service response.", @"");
@@ -418,6 +542,12 @@ static id _service = nil;
     NSLog(@"response=========>:%@", task.response);
     NSLog(@"error============>:%@", error);
     NSLog(@"<<<<<<<<<<<<<<<<<<<<<👆 REQUEST FINISH 👆<<<<<<<<<<<<<<<<<<<<<<<<<<");
+}
+
+/// 序列化
+- (AFHTTPRequestSerializer *)_requestSerializerWithRequest:(RACHttpRequest *) request{
+    AFHTTPRequestSerializer *requestSerializer = [AFHTTPRequestSerializer serializer];
+    return requestSerializer;
 }
 
 @end

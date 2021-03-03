@@ -16,6 +16,7 @@
 #import "RACHttpRequest.h"
 #import "RACHttpResponse.h"
 #import "RACHttpService.h"
+#import "RACResponseModel.h"
 
 FOUNDATION_EXPORT double RACNetWorkToolVersionNumber;
 FOUNDATION_EXPORT const unsigned char RACNetWorkToolVersionString[];

@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)rac_request:(NSArray<RACHttpRequest *>*)requsetArray completeBlock:(void(^)(NSArray<RACHttpRequest *> * obj,NSError * error))complete;
 
-//- (RACSignal*)rac_upload:(RACHttpRequest *)requset responseClass:(Class)responseClass fileDatas:(NSArray<NSData*>*)fileDatas name:(NSString*)name minType:(NSString*)mineType;
+- (RACSignal*)rac_upload:(RACHttpRequest *)requset responseClass:(Class)responseClass fileDatas:(NSArray<NSData*>*)fileDatas name:(NSString*)name minType:(NSString*)mineType;
 
 @end
 

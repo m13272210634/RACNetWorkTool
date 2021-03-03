@@ -4,7 +4,7 @@ platform :ios, '8.0'
 
 
 target 'RACNetWorkTool_Example' do
-  pod 'RACNetWorkTool'
+  pod 'RACNetWorkTool',:path => '../'
   
   pod 'ReactiveCocoa','2.5.0'
   # 网络请求
