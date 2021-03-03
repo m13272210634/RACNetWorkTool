@@ -394,7 +394,7 @@ static id _service = nil;
 #if defined(DEBUG)||defined(_DEBUG)
                         msgTips = StringIsNotEmpty(msgTips)?[NSString stringWithFormat:@"%@(%zd)",msgTips,statusCode]:[NSString stringWithFormat:@"服务器出错了，请稍后重试(%zd)~",statusCode];                 /// 调试模式
 #else
-                        msgTips = MHStringIsNotEmpty(msgTips)?msgTips:@"服务器出错了，请稍后重试~";  /// 发布模式
+                        msgTips = StringIsNotEmpty(msgTips)?msgTips:@"服务器出错了，请稍后重试~";  /// 发布模式
 #endif
                         userInfo[RACHTTPServiceErrorMessagesKey] = msgTips;
                         if (task.currentRequest.URL != nil) userInfo[RACHTTPServiceErrorRequestURLKey] = task.currentRequest.URL.absoluteString;
