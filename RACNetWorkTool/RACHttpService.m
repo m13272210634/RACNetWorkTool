@@ -9,7 +9,6 @@
 #import "RACHttpService.h"
 #import <AFNetworking/AFNetworkActivityIndicatorManager.h>
 #import <YYModel/YYModel.h>
-#import "RACResponseModel.h"
 @implementation RACHttpService
 
 static id _service = nil;
@@ -170,42 +169,45 @@ static id _service = nil;
         }
         
         __block NSURLSessionTask * task = nil;
-        task = [self dataTaskWithRequest:request completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable error) {
-            
-            if (error) {
-                NSError * parsError = [self rac_errorFromRequestWithTask:task httpResponse:(NSHTTPURLResponse *)response responseObject:responseObject error:error];
-                [self HTTPRequestLog:task body:params error:parsError];
-                [subscriber sendError:parsError];
-            }else{
-                NSInteger statusCode = [responseObject[RACHttpResponseCodeKey] integerValue];
-                if (statusCode == RACHttpResponseSuccessCode) {//请求成功
-                    [self HTTPRequestLog:task body:params error:nil];
-                    [subscriber sendNext:RACTuplePack(response,responseObject)];
-                    [subscriber sendCompleted];
-                }else{
-                    if (statusCode == 0) {
-                        
+     task =   [self dataTaskWithRequest:request uploadProgress:^(NSProgress * _Nonnull uploadProgress) {
+                    
+                } downloadProgress:^(NSProgress * _Nonnull downloadProgress) {
+                    
+                } completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable error) {
+                    if (error) {
+                        NSError * parsError = [self rac_errorFromRequestWithTask:task httpResponse:(NSHTTPURLResponse *)response responseObject:responseObject error:error];
+                        [self HTTPRequestLog:task body:params error:parsError];
+                        [subscriber sendError:parsError];
                     }else{
-                        NSMutableDictionary * userInfo = [NSMutableDictionary dictionary];
-                        userInfo[RACHTTPServiceErrorHTTPStatusCodeKey] = @(statusCode);
-                        NSString * msgTips = responseObject[RACHttpResponseMsgKey];
-                        msgTips = StringIsNotEmpty(msgTips)?msgTips:@"服务器出错了，请稍后重试~";
-                        userInfo[RACHTTPServiceErrorMessagesKey] = msgTips;
-                        if (task.currentRequest.URL != nil) {
-                            userInfo[RACHTTPServiceErrorRequestURLKey] = task.currentRequest.URL.absoluteString;
-                            
+                        NSInteger statusCode = [responseObject[RACHttpResponseCodeKey] integerValue];
+                        if (statusCode == RACHttpResponseSuccessCode) {//请求成功
+                            [self HTTPRequestLog:task body:params error:nil];
+                            [subscriber sendNext:RACTuplePack(response,responseObject)];
+                            [subscriber sendCompleted];
+                        }else{
+                            if (statusCode == 0) {
+                                
+                            }else{
+                                NSMutableDictionary * userInfo = [NSMutableDictionary dictionary];
+                                userInfo[RACHTTPServiceErrorHTTPStatusCodeKey] = @(statusCode);
+                                NSString * msgTips = responseObject[RACHttpResponseMsgKey];
+                                msgTips = StringIsNotEmpty(msgTips)?msgTips:@"服务器出错了，请稍后重试~";
+                                userInfo[RACHTTPServiceErrorMessagesKey] = msgTips;
+                                if (task.currentRequest.URL != nil) {
+                                    userInfo[RACHTTPServiceErrorRequestURLKey] = task.currentRequest.URL.absoluteString;
+                                    
+                                }
+                                if (task.error != nil) {
+                                    userInfo[NSUnderlyingErrorKey] = task.error;
+                                }
+                                NSError * requestError = [NSError errorWithDomain:RACHttpServiceDomainKey code:statusCode userInfo:userInfo];
+                                [self HTTPRequestLog:task body:params error:requestError];
+                                [subscriber sendError:error];
+                            }
                         }
-                        if (task.error != nil) {
-                            userInfo[NSUnderlyingErrorKey] = task.error;
-                        }
-                        NSError * requestError = [NSError errorWithDomain:RACHttpServiceDomainKey code:statusCode userInfo:userInfo];
-                        [self HTTPRequestLog:task body:params error:requestError];
-                        [subscriber sendError:error];
+                        
                     }
-                }
-                
-            }
-        }];
+                }];
         [task resume];
         return [RACDisposable disposableWithBlock:^{
             [task cancel];
@@ -220,16 +222,16 @@ static id _service = nil;
     /// 这里主要解析的是 data:对应的数据
     responseObject = responseObject[RACHttpResponseDataKey];
 
-    RACResponseModel * responseModel = [[RACResponseModel alloc]init];
-    responseModel.code = [responseObject[RACHttpResponseCodeKey] integerValue];
-    responseModel.msg = responseObject[RACHttpResponseMsgKey];
+//    RACResponseModel * responseModel = [[RACResponseModel alloc]init];
+//    responseModel.code = [responseObject[RACHttpResponseCodeKey] integerValue];
+//    responseModel.msg = responseObject[RACHttpResponseMsgKey];
     
     return  [RACSignal createSignal:^ id (id<RACSubscriber> subscriber) {
         /// 解析字典
         void (^parseJSONDictionary)(NSDictionary *) = ^(NSDictionary *JSONDictionary) {
             if (resultClass == nil) {
-                responseModel.obj = JSONDictionary;
-                [subscriber sendNext:responseModel];
+//                responseModel.obj = JSONDictionary;
+                [subscriber sendNext:JSONDictionary];
                 return;
             }
             /// 这里继续取出数据 data{"list":[]}
@@ -237,8 +239,7 @@ static id _service = nil;
             if ([JSONArray isKindOfClass:[NSArray class]]) {
                 /// 字典数组 转对应的模型
                 NSArray *parsedObjects = [NSArray yy_modelArrayWithClass:resultClass.class json:JSONArray];
-                responseModel.obj = parsedObjects;
-                [subscriber sendNext:responseModel];
+                [subscriber sendNext:parsedObjects];
                 
             }else{
                 /// 字典转模型
@@ -252,16 +253,14 @@ static id _service = nil;
                     [subscriber sendError:error];
                     return;
                 }
-                responseModel.obj = parsedObject;
-                [subscriber sendNext:responseModel];
+                [subscriber sendNext:parsedObject];
             }
         };
         
         if ([responseObject isKindOfClass:NSArray.class]) {
             
             if (resultClass == nil) {
-                responseModel.obj = responseObject;
-                [subscriber sendNext:responseModel];
+                [subscriber sendNext:responseObject];
             }else{
                 /// 数组 保证数组里面装的是同一种 NSDcitionary
                 for (NSDictionary *JSONDictionary in responseObject) {
@@ -273,9 +272,7 @@ static id _service = nil;
                 }
                 /// 字典数组 转对应的模型
                 NSArray *parsedObjects = [NSArray yy_modelArrayWithClass:resultClass.class json:responseObject];
-                responseModel.obj = parsedObjects;
-
-                [subscriber sendNext:responseModel];
+                [subscriber sendNext:parsedObjects];
             }
             [subscriber sendCompleted];
         } else if ([responseObject isKindOfClass:NSDictionary.class]) {

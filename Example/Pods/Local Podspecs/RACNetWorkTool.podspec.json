@@ -1,6 +1,6 @@
 {
   "name": "RACNetWorkTool",
-  "version": "0.1.8",
+  "version": "0.2.1",
   "summary": "封装了RAC与AFNetWorking",
   "description": "TODO: Add long description of the pod here.",
   "homepage": "https://github.com/m13272210634/RACNetWorkTool",
@@ -13,7 +13,7 @@
   },
   "source": {
     "git": "https://github.com/m13272210634/RACNetWorkTool.git",
-    "tag": "0.1.8"
+    "tag": "0.2.1"
   },
   "platforms": {
     "ios": "8.0"

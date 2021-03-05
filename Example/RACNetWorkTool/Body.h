@@ -7,12 +7,10 @@
 //
 
 #import <RACNetWorkTool/RACHttpService.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
 @interface Body : RACHttpParamsBody
 @property(nonatomic, strong)NSArray*array;
-
 @end
 
 NS_ASSUME_NONNULL_END

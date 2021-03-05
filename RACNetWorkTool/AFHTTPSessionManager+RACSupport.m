@@ -33,7 +33,11 @@ NSString *const RACAFNResponseObjectErrorKey = @"responseObject";
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
 		NSMutableURLRequest *request = [self.requestSerializer multipartFormRequestWithMethod:@"POST" URLString:[[NSURL URLWithString:path relativeToURL:self.baseURL] absoluteString] parameters:parameters constructingBodyWithBlock:block error:nil];
 		
-		NSURLSessionDataTask *task = [self dataTaskWithRequest:request completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
+		NSURLSessionDataTask *task =[self dataTaskWithRequest:request uploadProgress:^(NSProgress * _Nonnull uploadProgress) {
+            
+        } downloadProgress:^(NSProgress * _Nonnull downloadProgress) {
+            
+        } completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
 			if (error) {
 				NSMutableDictionary *userInfo = [error.userInfo mutableCopy];
         			if (responseObject) {
@@ -79,7 +83,11 @@ NSString *const RACAFNResponseObjectErrorKey = @"responseObject";
 		NSURLRequest *request = [self.requestSerializer requestWithMethod:method URLString:[[NSURL URLWithString:path relativeToURL:self.baseURL] absoluteString] parameters:parameters error:nil];
         
         /// 
-		NSURLSessionDataTask *task = [self dataTaskWithRequest:request completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
+		NSURLSessionDataTask *task = [self dataTaskWithRequest:request uploadProgress:^(NSProgress * _Nonnull uploadProgress) {
+            
+        } downloadProgress:^(NSProgress * _Nonnull downloadProgress) {
+            
+        } completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
 			if (error) {
 				NSMutableDictionary *userInfo = [error.userInfo mutableCopy];
 				if (responseObject) {
