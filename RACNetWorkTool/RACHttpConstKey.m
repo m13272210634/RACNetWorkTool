@@ -37,7 +37,7 @@ NSString * const RACHTTPServiceErrorMessagesKey =
 
 
 /* 响应key   */
-NSString * const RACHttpResponseCodeKey = @"code";
+NSString * const RACHttpResponseCodeKey = @"statusCode";
 
 NSString * const RACHttpResponseMsgKey = @"msg";
 
